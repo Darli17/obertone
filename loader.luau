@@ -133,6 +133,8 @@ Loading:SetCurrentStep(2)
 
 task.wait(1)
 
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Darli17/obertone/refs/heads/main/games/babft.luau"))()
+
 Loading:SetCurrentStep(3)
 Loading:ShowSidebarPage(false)
 Loading:SetDescription("Ready to start!")
