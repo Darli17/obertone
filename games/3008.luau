@@ -19,6 +19,7 @@
                                                                                                                       
                                                                                                                       
 ]]
+
 local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
@@ -1061,6 +1062,9 @@ local NoFallDamage = StatsGroup:AddToggle("FallDamage", {
                 end
             end)
         end
+        if falldamage == false then
+            character.FallDamage.Enabled = true
+        end
     end
 })
 local AutoRespawn = StatsGroup:AddToggle("Respawn", {
@@ -1243,43 +1247,6 @@ local ShoveEmployees = StatsGroup:AddToggle("ShoveEmployees", {
     end
 })
 
-if player:FindFirstChild("Permissions"):GetAttribute("Broadcast") == true then
-
-local InfiniteCapacity = StatsGroup:AddToggle("InfiniteCapacity", {
-    Text = "Infinite Inventory",
-    Default = false,
-    Callback = function(Value)
-
-if Value == true then
-local args = {
-	"UpdatePlayerProperties",
-	{
-		ToPlayer = player,
-		Properties = {
-			MaxInventorySpace = 999
-		}
-	}
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Vip"):FireServer(unpack(args))
-else
-local args = {
-	"UpdatePlayerProperties",
-	{
-		ToPlayer = player,
-		Properties = {
-			MaxInventorySpace = 16
-		}
-	}
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Vip"):FireServer(unpack(args))
-
-end
-
-    end
-})
-
-end
-
 local OtherGroup = Tabs.Modifiers:AddGroupbox({
     Side = "Right",
     Name = "Other",
@@ -1306,7 +1273,7 @@ game:Shutdown()
 end)
 
 local WorldGroup = Tabs.Visuals:AddGroupbox({
-    Side = "Right",
+    Side = "Left",
     Name = "World",
     Description = "Fullbright, no fog.",
     IconName = "earth",
@@ -1518,6 +1485,23 @@ local FakeWatch = PlayerOGroup:AddToggle("FakeWatch", {
     end
 })
 
+local AFK = PlayerOGroup:AddToggle("AFK", {
+    Text = "AFK Mode",
+    Default = false,
+    Callback = function(Value)
+
+local args = {
+	"ToggleAFK",
+	{
+		Data = Value
+	}
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Communication"):FireServer(unpack(args))
+
+
+    end
+})
+
 local DeathWaypoint = PlayerOGroup:AddToggle("DeathWaypoint", {
     Text = "Death Waypoint",
     Default = false,
@@ -1577,7 +1561,7 @@ PlayerOGroup:AddButton("Delete Death Waypoint", function()
 end)
 
 local WaypointsGroup = Tabs.Visuals:AddGroupbox({
-    Side = "Right",
+    Side = "Left",
     Name = "Waypoints",
     IconName = "waypoints",
 })
@@ -1756,7 +1740,7 @@ WaypointsGroup:AddButton("Update Waypoint", function()
 end)
 
 local ESP = Tabs.Visuals:AddGroupbox({
-    Side = "Left",
+    Side = "Right",
     Name = "ESP",
     IconName = "eye-dashed",
 })
@@ -2159,7 +2143,7 @@ foodcolor = Value
 })
 
 local VIPGroup = Tabs.Visuals:AddGroupbox({
-    Side = "Left",
+    Side = "Right",
     Name = "Admin Panel",
     IconName = "shield-check",
 })
@@ -2809,84 +2793,41 @@ local ObjectsGroup = Tabs.Functions:AddGroupbox({
     IconName = "box",
 })
 
-local uis = game:GetService("UserInputService")
-
-local deleteobjectenabled = false
-local deleteobjectkeybind = Enum.KeyCode.V
-
-local DeleteObject = ObjectsGroup:AddToggle("DeleteObject", {
+ObjectsGroup:AddButton({
     Text = "FE Delete Object",
-    Default = false,
-
-    Callback = function(Value)
+    Func = function()
         if falldamage then
-          deleteobjectenabled = Value
+              if not character then
+                  return
+              end
+
+              local delete_oldpos = nil
+
+          delete_oldpos = character:GetPivot()
+          character:PivotTo(CFrame.new(806.7000122070312, 1755.8499755859375, 8.399999618530273, 1, 0, 0, 0, 1, 0, 0, 0, 1))
+          task.wait(0.3)
+          local args = {
+            "Drop",
+            {
+              EndCFrame = CFrame.new(806.7000122070312, 1755.8499755859375, 8.399999618530273, 1, 0, 0, 0, 1, 0, 0, 0, 1),
+              CameraCFrame = vector.create(0.8630911111831665, -0.5018275380134583, 0.056946542114019394),
+              Throw = true,
+              ThrowPower = 0.018419502303004265
+            }
+          }
+          character:WaitForChild("System"):WaitForChild("Action"):InvokeServer(unpack(args))
+          character:PivotTo(delete_oldpos)
+          if workspace.CurrentCamera:FindFirstChild("ReplicatedModel") then
+          workspace.CurrentCamera:FindFirstChild("ReplicatedModel"):Destroy()
+          end
         else
         notification("Obertone", "To use this function you need to enable 'No Fall Damage' ", 5)
         end
     end
-})
-
-ObjectsGroup:AddInput("DeleteObjectKeybind", {
+}):AddKeyPicker("FEKey", {
     Default = "V",
-    Numeric = false,
-    Finished = false,
-    ClearTextOnFocus = false,
-    MaxLength = 1,
-
-    Text = "Delete Object Keybind",
-
-    Callback = function(Value)
-        local key = Value:upper()
-
-        if Enum.KeyCode[key] then
-            deleteobjectkeybind = Enum.KeyCode[key]
-
-        else
-
-        end
-    end,
+    Mode = "Press"
 })
-
-uis.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then
-        return
-    end
-
-    if not deleteobjectenabled then
-        return
-    end
-
-    if input.KeyCode ~= deleteobjectkeybind then
-        return
-    end
-
-
-    if not character then
-        return
-    end
-
-    local delete_oldpos = nil
-
-delete_oldpos = character:GetPivot()
-character:PivotTo(CFrame.new(806.7000122070312, 1755.8499755859375, 8.399999618530273, 1, 0, 0, 0, 1, 0, 0, 0, 1))
-task.wait(0.3)
-local args = {
-	"Drop",
-	{
-		EndCFrame = CFrame.new(806.7000122070312, 1755.8499755859375, 8.399999618530273, 1, 0, 0, 0, 1, 0, 0, 0, 1),
-		CameraCFrame = vector.create(0.8630911111831665, -0.5018275380134583, 0.056946542114019394),
-		Throw = true,
-		ThrowPower = 0.018419502303004265
-	}
-}
-character:WaitForChild("System"):WaitForChild("Action"):InvokeServer(unpack(args))
-character:PivotTo(delete_oldpos)
-if workspace.CurrentCamera:FindFirstChild("ReplicatedModel") then
-workspace.CurrentCamera:FindFirstChild("ReplicatedModel"):Destroy()
-end
-end)
-
 -- UI Settings
 
 local MenuGroup = Tabs["UI Settings"]:AddLeftGroupbox("Menu", "wrench")
@@ -2920,21 +2861,6 @@ sound.SoundId = getcustomasset(a)
 sound.Volume = 1
 sound:Play()
 end)
-
-MenuGroup:AddToggle("ShowRobloxCursor", {
-	Text = "Hide Roblox Cursor",
-	Default = true,
-	Callback = function(Value)
-
-local uis = game:GetService("UserInputService")
-uis.MouseIconEnabled = not Value
-
-	end,
-})
-
-local uis = game:GetService("UserInputService")
-uis.MouseIconEnabled = false
-
 Library.Cursor:ChangeIcon("rbxassetid://79308084057456")
 
 MenuGroup:AddToggle("KeybindMenuOpen", {
